@@ -1,4 +1,4 @@
 # CoreApiFundamentals
 
-![Entities](https://github.com/AdamAbrahaam/CoreApiFundamentals/blob/master/gitPictures/entities.png)
+![Entities](gitPictures/entities.png)
 ![URI's](gitPictures/uris.png)
