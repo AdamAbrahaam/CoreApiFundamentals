@@ -28,7 +28,11 @@ namespace CoreCodeCamp.Data
                 .ReverseMap();
 
             this.CreateMap<Talk, TalkModel>()
-                .ReverseMap();
+                .ReverseMap()
+                // Ignores must be after the reverseMap bcs we want it only when we map TalkModel to Talk (TalksController, Put)
+                // From Talk to TalkModel we want to map it
+                .ForMember(t => t.Camp, opt => opt.Ignore())
+                .ForMember(t => t.Speaker, opt => opt.Ignore()); 
 
             this.CreateMap<Speaker, SpeakerModel>()
                 .ReverseMap();

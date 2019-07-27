@@ -41,7 +41,7 @@ namespace CoreCodeCamp.Controllers
             }
         }
 
-        [HttpGet("{moniker}")]
+        [HttpGet("{moniker}")] // camps/{moniker}   -   automatically bind {moniker} to Get param string moniker
         public async Task<ActionResult<CampModel>> Get(string moniker)
         {
             try
@@ -58,12 +58,29 @@ namespace CoreCodeCamp.Controllers
             }
         }
 
+        [HttpGet("search")] // camps/search?theDate=xy
+        public async Task<ActionResult<CampModel[]>> SearchByDate(DateTime theDate, bool includeTalks = false)
+        {
+            try
+            {
+                var results = await _repository.GetAllCampsByEventDate(theDate, includeTalks);
+
+                if (!results.Any()) return NotFound();
+
+                return _mapper.Map<CampModel[]>(results);
+            }
+            catch (Exception)
+            {
+                return this.StatusCode(StatusCodes.Status500InternalServerError, "Database Failure");
+            }
+        }
+
         public async Task<ActionResult<CampModel>> Post(CampModel model)
         {
             try
             {
                 // Model Validation, unique moniker example     -   Required, etc. Data Annotations in Models
-                var exists = _repository.GetCampAsync(model.Moniker);
+                var exists = await _repository.GetCampAsync(model.Moniker);
                 if (exists != null)
                 {
                     return BadRequest("Moniker already exists!");
@@ -93,7 +110,53 @@ namespace CoreCodeCamp.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure!");
             }
 
-            return BadRequest(); // Something wrong happend
+            return BadRequest(); // Something wrong happened
+        }
+
+        [HttpPut("{moniker}")]
+        public async Task<ActionResult<CampModel>> Put(string moniker, CampModel model)
+        {
+            try
+            {
+                var oldCamp = await _repository.GetCampAsync(moniker);
+                if (oldCamp == null) return NotFound("Camp with this moniker doesn't exists!");
+
+                _mapper.Map(model,oldCamp); // oldCamp.Name = model.Name ... 
+
+                if (await _repository.SaveChangesAsync())
+                {
+                    return _mapper.Map<CampModel>(oldCamp);     // Put doesn't require special return type
+                }
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure!");
+            }
+
+            return BadRequest();
+        }
+
+        [HttpDelete("{moniker}")]
+        public async Task<IActionResult> Delete(string moniker)
+        {
+            try
+            {
+                var camp = await _repository.GetCampAsync(moniker);
+                if (camp == null) return NotFound("Camp with this moniker doesn't exists!");
+
+                _repository.Delete(camp);
+
+                if (await _repository.SaveChangesAsync())
+                {
+                    return Ok();
+                }
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Database Failure!");
+            }
+
+            return BadRequest("Failed to delete camp");
         }
     }
 }
